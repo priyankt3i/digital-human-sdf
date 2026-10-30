@@ -166,11 +166,14 @@ export function maskContours(mask, w, h, faceClasses, headClasses, facing) {
 }
 
 /** Which way does a profile face? Face skin sits on the side away from most of the hair. */
-export function profileFacing(mask, w, h, faceClass, hairClass) {
+export function profileFacing(mask, w, h, skinClasses, hairClasses) {
+  const skin = [].concat(skinClasses), hair = [].concat(hairClasses);
   let fx = 0, fn = 0, hx = 0, hn = 0;
-  for (let i = 0; i < mask.length; i++) {
+  // only the upper half of the image: shoulders and chest would pull the skin centroid
+  const yMax = Math.floor(h * 0.6);
+  for (let i = 0; i < w * yMax; i++) {
     const x = i % w;
-    if (mask[i] === faceClass) { fx += x; fn++; } else if (mask[i] === hairClass) { hx += x; hn++; }
+    if (skin.includes(mask[i])) { fx += x; fn++; } else if (hair.includes(mask[i])) { hx += x; hn++; }
   }
   if (!fn) return 0;
   if (!hn) return 0;

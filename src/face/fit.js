@@ -47,9 +47,11 @@ export function analyzeProfilePhoto(vision, canvas) {
   const seg = segment(vision, canvas);
   const w = canvas.width, h = canvas.height;
   const mask = maskToSize(seg, w, h);
-  const facing = profileFacing(mask, w, h, SEG.faceSkin, SEG.hair);
+  // In side views MediaPipe often labels much of the face "body skin", so use all skin.
+  const skin = [SEG.faceSkin, SEG.bodySkin];
+  const facing = profileFacing(mask, w, h, skin, [SEG.hair]);
   if (!facing) return { ok: false, warnings: ['Could not find a face and hair in this side view.'] };
-  const { front, back } = maskContours(mask, w, h, [SEG.faceSkin], [SEG.faceSkin, SEG.hair, SEG.bodySkin], facing);
+  const { front, back } = maskContours(mask, w, h, skin, [...skin, SEG.hair], facing);
   const warnings = [];
   const det = detectFace(vision, canvas);
   if (det && det.yaw !== null && Math.abs(det.yaw) < 55) warnings.push('This looks more like a three-quarter view than a full profile.');
@@ -165,6 +167,13 @@ export async function fitFace(vision, camera, designInput, results, onProgress =
   if (sides.length) {
     const target = {};
     for (const k of ['noseProjection', 'chinProjection', 'headDepth']) target[k] = average(sides, k);
+    // head depth depends on hair segmentation at the back of the head, which is noisy:
+    // only trust it when two profiles agree
+    const hd = sides.map((r) => r.ratios.headDepth).filter(Number.isFinite);
+    if (hd.length < 2 || Math.abs(hd[0] - hd[1]) / ((hd[0] + hd[1]) / 2) > 0.15) {
+      if (target.headDepth !== undefined) log.push('Head depth skipped (left and right profiles disagree, usually because of hair).');
+      delete target.headDepth;
+    }
     const measure = () => {
       const p = modelProfile(withFace());
       return analyzeProfile(p.front, p.back).ratios;
