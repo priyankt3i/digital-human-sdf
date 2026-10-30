@@ -12,11 +12,12 @@ export class Renderer {
     this.gl = canvas.getContext('webgl2', opts) || canvas.getContext('webgl', opts);
     if (!this.gl) throw new Error('WebGL is not available in this browser.');
     const gl = this.gl;
+    this.webgl2 = typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext;
     this.parallel = gl.getExtension('KHR_parallel_shader_compile');
     this.buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    this.vs = this._shader(gl.VERTEX_SHADER, VERTEX);
+    this.vs = this._shader(gl.VERTEX_SHADER, this._port(VERTEX, 'vertex'));
     this.program = null;
     this.pending = null;
     this.uniforms = {};
@@ -38,10 +39,24 @@ export class Renderer {
     return s;
   }
 
+  /**
+   * The shaders are authored in GLSL ES 1.00. On WebGL 2 we upgrade them to
+   * 3.00, which allows a non-constant loop start (uZero) so drivers keep loops
+   * as loops instead of unrolling map() dozens of times. On WebGL 1 the loops
+   * fall back to a constant start.
+   */
+  _port(src, stage) {
+    if (!this.webgl2) return src.replace(/int i = uZero/g, 'int i = 0');
+    if (stage === 'vertex') return `#version 300 es\n${src.replace(/\battribute\b/g, 'in')}`;
+    return `#version 300 es\n${src}`
+      .replace('precision highp float;', 'precision highp float;\nprecision highp int;\nout vec4 outColor;')
+      .replace(/\bgl_FragColor\b/g, 'outColor');
+  }
+
   /** Compile a fragment source asynchronously. Resolves when it is live. */
   setFragment(src) {
     const gl = this.gl;
-    const fs = this._shader(gl.FRAGMENT_SHADER, src);
+    const fs = this._shader(gl.FRAGMENT_SHADER, this._port(src, 'fragment'));
     const p = gl.createProgram();
     gl.attachShader(p, this.vs);
     gl.attachShader(p, fs);
@@ -64,7 +79,7 @@ export class Renderer {
         this.program = p;
         gl.deleteShader(fs);
         this.uniforms = {};
-        for (const n of ['iResolution', 'iTime', 'uCam', 'uTarget', 'uJitter', 'uLight', 'uScan', 'uFloor', 'uMaxSteps', 'uDebug', 'uMat']) {
+        for (const n of ['iResolution', 'iTime', 'uCam', 'uTarget', 'uJitter', 'uLight', 'uScan', 'uFloor', 'uMaxSteps', 'uDebug', 'uMat', 'uZero']) {
           this.uniforms[n] = gl.getUniformLocation(p, n === 'uMat' ? 'uMat[0]' : n);
         }
         this.pending = null;
@@ -133,6 +148,7 @@ export class Renderer {
     gl.uniform1i(u.uMaxSteps, st.steps);
     gl.uniform1i(u.uDebug, st.debug);
     gl.uniform3fv(u.uMat, st.materials);
+    gl.uniform1i(u.uZero, 0);
     if (n === 0) {
       gl.disable(gl.BLEND);
     } else {

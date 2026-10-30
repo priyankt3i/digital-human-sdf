@@ -45,7 +45,7 @@ export function buildBody(h, rig, d) {
         // upper slope: broad and shallow, blends smoothly into the chest
         h.ellipsoid(C(side * 0.083 * ch, 1.272, -0.068 * ch - 0.008 * k), S(0.05 + 0.012 * k, 0.048 + 0.01 * k, 0.03 + 0.016 * k), { blend: 0.04 * s, name: `bustUpper${n}` });
         // lower pole: fuller and rounder, small blend keeps the inframammary fold defined
-        h.ellipsoid(C(side * 0.09 * ch, 1.243 - 0.014 * k, -0.074 * ch - 0.02 * k), S(0.044 + 0.02 * k, 0.037 + 0.018 * k, 0.034 + 0.024 * k), { blend: 0.014 * s, name: `bustLower${n}` });
+        h.ellipsoid(C(side * 0.088 * ch, 1.246 - 0.012 * k, -0.068 * ch - 0.012 * k), S(0.048 + 0.018 * k, 0.04 + 0.015 * k, 0.03 + 0.016 * k), { blend: 0.024 * s, name: `bustLower${n}` });
       }
     }
   });

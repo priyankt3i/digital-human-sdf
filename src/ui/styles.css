@@ -118,7 +118,7 @@ button { cursor: pointer; }
   pointer-events: none; text-align: right;
 }
 .status.busy { color: var(--signal); }
-.fail { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--danger); background: #0b1118; }
+.fail { white-space: pre-wrap; font-family: var(--mono); font-size: 12px; position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--danger); background: #0b1118; }
 
 /* ---------- inspector ---------- */
 .inspector { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }

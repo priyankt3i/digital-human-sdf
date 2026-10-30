@@ -342,7 +342,9 @@ async function flush() {
       if (compiled.sceneSource !== app.sceneKey) {
         app.sceneKey = compiled.sceneSource;
         setStatus(`Compiling shader (${compiled.stats.parts} parts)…`, true);
-        const res = await renderer.setFragment(compiled.fragment);
+        const slow = setTimeout(() => setStatus('Still compiling: the first compile can take a while on some GPUs…', true), 6000);
+        const res = await renderer.setFragment(compiled.fragment).finally(() => clearTimeout(slow));
+        $('#fail').hidden = true;
         if (res) app.shaderMs = res.ms;
       }
     }
@@ -356,8 +358,14 @@ async function flush() {
     storage.set({ source: text, preset: app.presetId });
     updateStatus();
   } catch (e) {
-    log(String(e.message || e), 'error');
-    setStatus('Design has an error; see the Code tab.', true);
+    const msg = String(e.message || e);
+    log(msg, 'error');
+    const shaderError = /ERROR|compile|link/i.test(msg) && !/export default|Unexpected|is not defined/.test(msg);
+    setStatus(shaderError ? 'Shader failed to compile on this GPU.' : 'Design has an error; see the Code tab.', true);
+    if (shaderError && renderer && !renderer.program) {
+      $('#fail').hidden = false;
+      $('#fail').textContent = `The shader failed to compile on this GPU/browser. Please open an issue with this message:\n\n${msg.slice(0, 600)}`;
+    }
     console.error(e);
   } finally {
     busy = false;

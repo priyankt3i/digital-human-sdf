@@ -40,6 +40,7 @@ uniform float uFloor;
 uniform int   uMaxSteps;
 uniform int   uDebug;      // 0 lit, 1 clay, 2 normals, 3 materials, 4 cost
 uniform vec3  uMat[9];
+uniform int   uZero;       // always 0; a non-constant loop start stops drivers unrolling map() calls
 `;
 
 export const RENDERER = /* glsl */ `
@@ -64,16 +65,20 @@ vec3 matColor(float id){
   return uMat[8];
 }
 
+// Tetrahedral normal written as a loop so map() is inlined once, not four times.
 vec3 calcNormal(vec3 p){
-  const vec2 k = vec2(1.0, -1.0);
-  const float e = 0.0004;
-  return normalize(k.xyy * map(p + k.xyy * e) + k.yyx * map(p + k.yyx * e) +
-                   k.yxy * map(p + k.yxy * e) + k.xxx * map(p + k.xxx * e));
+  vec3 n = vec3(0.0);
+  for (int i = uZero; i < 4; i++){
+    float fi = float(i);
+    vec3 e = 2.0 * vec3(mod(floor((fi + 3.0) * 0.5), 2.0), mod(floor(fi * 0.5), 2.0), mod(fi, 2.0)) - 1.0;
+    n += e * map(p + e * 0.0004);
+  }
+  return normalize(n);
 }
 
 float softShadow(vec3 ro, vec3 rd, float maxt){
   float res = 1.0, t = 0.012;
-  for (int i = 0; i < 40; i++){
+  for (int i = uZero; i < 40; i++){
     float h = map(ro + rd * t);
     res = min(res, 10.0 * h / t);
     t += clamp(h, 0.006, 0.12);
@@ -84,7 +89,7 @@ float softShadow(vec3 ro, vec3 rd, float maxt){
 
 float calcAO(vec3 p, vec3 n){
   float occ = 0.0, sca = 1.0;
-  for (int i = 0; i < 5; i++){
+  for (int i = uZero; i < 5; i++){
     float h = 0.008 + 0.03 * float(i);
     occ += (h - map(p + n * h)) * sca;
     sca *= 0.75;
@@ -103,14 +108,13 @@ const vec3 KEY  = vec3(-0.50, 0.80, -0.62);
 const vec3 FILL = vec3( 0.75, 0.25, -0.45);
 const vec3 RIM  = vec3( 0.35, 0.45,  0.95);
 
-vec3 shade(vec3 p, vec3 n, vec3 rd, float id){
+vec3 shade(vec3 p, vec3 n, vec3 rd, float id, float sh){
   vec3 base = matColor(id);
   if (uDebug == 1) { base = vec3(0.42); id = 2.0; }
   vec3 v = -rd;
   vec3 lk = normalize(KEY), lf = normalize(FILL), lr = normalize(RIM);
   float nv = clamp(dot(n, v), 0.0, 1.0);
   float occ = calcAO(p, n);
-  float sh = softShadow(p + n * 0.002, lk, 2.5);
   vec3 keyCol = vec3(1.0, 0.95, 0.88) * 2.4 * uLight;
   vec3 fillCol = vec3(0.55, 0.66, 0.85) * 0.55 * uLight;
   vec3 rimCol = vec3(0.65, 0.82, 1.0) * 1.1 * uLight;
@@ -194,10 +198,9 @@ void main(){
   vec2 bh = boxHit(ro, rd, BMIN, BMAX);
   if (bh.y > max(bh.x, 0.0)) {
     float t = max(bh.x, 0.0);
-    for (int i = 0; i < 400; i++){
+    for (int i = uZero; i < 400; i++){
       if (i >= uMaxSteps) break;
-      vec3 p = ro + rd * t;
-      float h = map(p);
+      float h = map(ro + rd * t);
       steps += 1.0;
       if (h < 0.00025 * t) { tHit = t; break; }
       t += h * 0.9;
@@ -205,26 +208,28 @@ void main(){
     }
   }
 
-  // studio floor
+  // One shading path for body and floor so map() and softShadow() each get
+  // inlined at a single call site (keeps the compiled shader small on D3D/ANGLE).
   float tFloor = rd.y < 0.0 ? -ro.y / rd.y : 1e9;
-  if (uFloor > 0.5 && tFloor < tHit) {
-    vec3 gp = ro + rd * tFloor;
-    float sh = softShadow(gp + vec3(0.0, 0.001, 0.0), normalize(KEY), 3.0);
-    float md = map(gp);
-    float contact = md > 0.049 ? 1.0 : clamp(md / 0.05, 0.0, 1.0);
-    vec3 fc = vec3(0.05, 0.056, 0.066) * (0.35 + 0.65 * sh) * mix(0.35, 1.0, contact) * uLight;
-    vec2 gq = abs(fract(gp.xz * 2.0) - 0.5);
-    float grid = 1.0 - smoothstep(0.0, 0.012 * tFloor, min(gq.x, gq.y));
-    fc += uMat[8] * grid * 0.035 * exp(-length(gp.xz) * 0.6);
-    float fade = exp(-length(gp.xz) * 0.22);
-    col = mix(col, fc, fade);
-  } else if (tHit < 1e8) {
-    vec3 p = ro + rd * tHit;
-    vec3 n = calcNormal(p);
-    float id = matAt(p);
-    if (uDebug == 2) col = n * 0.5 + 0.5;
-    else if (uDebug == 3) col = matColor(id) * 0.5 + 0.5 * vec3(fract(id * 0.618), fract(id * 0.382 + 0.3), fract(id * 0.137 + 0.6));
-    else col = shade(p, n, rd, id);
+  bool body = tHit < 1e8 && tHit <= tFloor;
+  bool flr = !body && uFloor > 0.5 && tFloor < 1e8;
+  if (body || flr) {
+    vec3 p = ro + rd * (body ? tHit : tFloor);
+    vec3 n = body ? calcNormal(p) : vec3(0.0, 1.0, 0.0);
+    bool needShadow = !(body && (uDebug == 2 || uDebug == 3));
+    float sh = needShadow ? softShadow(p + n * 0.002, normalize(KEY), body ? 2.5 : 3.0) : 1.0;
+    if (body) {
+      float id = matAt(p);
+      if (uDebug == 2) col = n * 0.5 + 0.5;
+      else if (uDebug == 3) col = matColor(id) * 0.5 + 0.5 * vec3(fract(id * 0.618), fract(id * 0.382 + 0.3), fract(id * 0.137 + 0.6));
+      else col = shade(p, n, rd, id, sh);
+    } else {
+      vec3 fc = vec3(0.05, 0.056, 0.066) * (0.35 + 0.65 * sh) * uLight;
+      vec2 gq = abs(fract(p.xz * 2.0) - 0.5);
+      float grid = 1.0 - smoothstep(0.0, 0.012 * tFloor, min(gq.x, gq.y));
+      fc += uMat[8] * grid * 0.035 * exp(-length(p.xz) * 0.6);
+      col = mix(col, fc, exp(-length(p.xz) * 0.22));
+    }
   }
   if (uDebug == 4) col = mix(vec3(0.05, 0.1, 0.4), vec3(1.0, 0.3, 0.1), clamp(steps / float(uMaxSteps), 0.0, 1.0)) * (steps > 0.0 ? 1.0 : 0.15);
 
