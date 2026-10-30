@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Digital Human SDF Studio</title>
+<meta name="description" content="Design a digital human in code: a parametric, raymarched signed-distance-field figure with a rig, mocap markers and a live GLSL compiler.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/ui/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="./" aria-label="Digital Human SDF home">
+    <img src="assets/favicon.svg" alt="" width="26" height="26">
+    <span>Digital Human <b>SDF</b></span>
+  </a>
+  <label class="preset">
+    <span class="sr-only">Load a design</span>
+    <select id="preset" aria-label="Load a design"></select>
+  </label>
+  <div class="topbar-actions">
+    <button id="share" class="ghost" type="button">Copy share link</button>
+    <div class="menu" id="exportMenu">
+      <button class="primary" type="button" aria-haspopup="true" aria-expanded="false" id="exportBtn">Export</button>
+      <div class="menu-list" role="menu" hidden>
+        <button role="menuitem" data-export="design">Design file (.js)</button>
+        <button role="menuitem" data-export="glsl">Fragment shader (.glsl)</button>
+        <button role="menuitem" data-export="shadertoy">Shadertoy shader</button>
+        <button role="menuitem" data-export="markers">Marker positions (.csv)</button>
+        <button role="menuitem" data-export="png">Screenshot (.png)</button>
+      </div>
+    </div>
+    <a class="ghost icon" href="https://github.com/priyankt3i/digital-human-sdf" target="_blank" rel="noopener" aria-label="Source on GitHub">
+      <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+    </a>
+  </div>
+</header>
+
+<main class="studio">
+  <section class="stage" id="stage" aria-label="3D viewport">
+    <canvas id="gl"></canvas>
+    <svg id="ruler" class="ruler" aria-hidden="true"></svg>
+    <div class="title-block">
+      <h1 id="designName">Mocap Performer</h1>
+      <p id="designMeta"></p>
+    </div>
+    <div class="views" role="group" aria-label="Camera">
+      <button data-view="front" aria-pressed="true">Front</button>
+      <button data-view="three">¾</button>
+      <button data-view="side">Side</button>
+      <button data-view="back">Back</button>
+      <button data-view="face">Face</button>
+      <button data-view="hands">Hand</button>
+    </div>
+    <div class="status" id="status" role="status">Starting WebGL…</div>
+    <div class="fail" id="fail" hidden></div>
+  </section>
+
+  <aside class="inspector">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-design" aria-controls="panel-design" aria-selected="true">Design</button>
+      <button role="tab" id="tab-code" aria-controls="panel-code" aria-selected="false">Code</button>
+      <button role="tab" id="tab-render" aria-controls="panel-render" aria-selected="false">Render</button>
+    </div>
+
+    <div class="panel" id="panel-design" role="tabpanel" aria-labelledby="tab-design">
+      <p class="hint">Sliders rewrite the design file on the Code tab, so anything you tune here can be saved and committed.</p>
+      <div id="controls"></div>
+      <button id="resetDesign" class="ghost wide" type="button">Reset to preset</button>
+    </div>
+
+    <div class="panel" id="panel-code" role="tabpanel" aria-labelledby="tab-code" hidden>
+      <div class="code-head">
+        <div class="seg" role="group" aria-label="Source view">
+          <button id="showDesign" aria-pressed="true">design.js</button>
+          <button id="showGlsl" aria-pressed="false">Generated GLSL</button>
+        </div>
+        <button id="run" class="primary small" type="button" title="Ctrl/⌘ + Enter">Run</button>
+      </div>
+      <div class="editor" id="editor">
+        <pre class="gutter" id="gutter" aria-hidden="true"></pre>
+        <textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Design source code"></textarea>
+      </div>
+      <div class="console" id="console" role="log">Ready.</div>
+      <details class="api">
+        <summary>Builder API cheat sheet</summary>
+        <pre>extend(h, rig, util) {
+  h.sphere(c, r, opts)
+  h.ellipsoid(c, [rx, ry, rz], opts)
+  h.capsule(a, b, r, opts)
+  h.limb(a, b, r1, r2, opts)   // tapered
+  h.box(c, [hx, hy, hz], round, opts)
+  h.torus(c, R, r, opts)       // ring around local Y
+  h.with({ frame, material, blend, layer }, () =&gt; …)
+  h.remove(part =&gt; part.name === 'earL')
+}
+opts: { blend, material, op: 'union'|'subtract'|'intersect',
+        frame: 'head'|'handL'|'handR', clip, name }
+rig:  s, head, arms[±1].{shoulder,elbow,wrist,hand},
+      legs[±1].{hip,knee,ankle}, P(x, yRef, z)
+util: headPoint(x, y, z), vec, design</pre>
+      </details>
+    </div>
+
+    <div class="panel" id="panel-render" role="tabpanel" aria-labelledby="tab-render" hidden>
+      <div id="renderControls"></div>
+    </div>
+  </aside>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

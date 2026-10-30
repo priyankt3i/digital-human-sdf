@@ -1,0 +1,15 @@
+{
+  "name": "digital-human-sdf",
+  "version": "0.1.0",
+  "description": "Design a digital human in code: a parametric, rigged, raymarched signed-distance-field figure with mocap markers and a live GLSL studio.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "start": "node tools/serve.mjs 8000",
+    "build:glsl": "node tools/build.mjs designs/performer.js -o dist/performer.frag.glsl",
+    "test": "node --test test/*.test.mjs",
+    "screenshots": "node tools/screenshot.mjs docs/img performer t-pose dancer"
+  },
+  "engines": { "node": ">=18" },
+  "keywords": ["sdf", "raymarching", "glsl", "webgl", "digital-human", "procedural", "motion-capture", "shader"]
+}
