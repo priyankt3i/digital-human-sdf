@@ -319,7 +319,7 @@ function setSource(text, opts = {}) {
     renderGutter();
   }
   queued = { text, opts };
-  if (!busy) requestAnimationFrame(flush);
+  if (!busy) setTimeout(flush, 0);
 }
 
 async function flush() {
@@ -369,7 +369,7 @@ async function flush() {
     console.error(e);
   } finally {
     busy = false;
-    if (queued) requestAnimationFrame(flush);
+    if (queued) setTimeout(flush, 0);
   }
 }
 
