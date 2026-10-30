@@ -39,8 +39,46 @@ the figure faces **−Z**. Side `+1` (positive X) is the subject's right.
 
 ### face
 
-`jaw`, `cheekbones`, `noseLength`, `noseWidth`, `browRidge`, `lipFullness`,
-`eyeSpacing`, `earSize`: all multipliers around 1.0.
+All multipliers around 1.0:
+
+| key | what it changes |
+|---|---|
+| `faceWidth` | width across cheeks, jaw and temples |
+| `faceLength` | everything below the eye line (nose, mouth, chin move down) |
+| `headDepth` | skull length front to back |
+| `jaw` | jaw (gonial) width |
+| `cheekbones` | zygomatic prominence |
+| `noseLength`, `noseWidth` | nasion to tip; alar width |
+| `noseProjection` | how far the tip stands off the face |
+| `chinProjection` | how far the chin comes forward |
+| `browRidge` | glabella / brow prominence |
+| `lipFullness`, `mouthWidth` | lip thickness; mouth corner to corner |
+| `eyeSpacing`, `eyeSize` | interpupillary distance; eye and lid size |
+| `earSize` | |
+
+The default face follows adult anthropometric norms (Farkas): head breadth ~150 mm,
+bizygomatic ~135 mm, bigonial ~105 mm, nasal width ~33 mm, mouth width ~50 mm,
+nasion–menton ~123 mm, nose projection ~20 mm.
+
+### Fitting the face to photos
+
+The Design tab's **Face from photos** panel measures up to four photos (front,
+left profile, right profile, back) in the browser with MediaPipe and writes the
+fitted numbers into the `face`, `materials` and `look.hair` fields. Photos never
+leave the device.
+
+- Front: 478 face-mesh landmarks give eight ratios (eye spacing, face length,
+  nose width/length, mouth width, jaw, eye size, lip thickness), each divided by
+  another length on the same face. The fitter photographs the model with the same
+  detector and adjusts the matching parameter until the ratios agree.
+- Profiles: a segmentation mask gives the face's front contour; the nasion, nose
+  tip, subnasale and chin are found on it, and nose projection, chin projection
+  and head depth are expressed in nasion-to-tip units. The model's own contour is
+  traced from the distance field and matched with secant steps.
+- Back: hair shape picks a hair style; hair color comes from the hair pixels.
+- Colors: median skin, hair, iris ring and lip pixels.
+
+The pure math lives in `src/face/measure.js` (tested in `test/face.test.mjs`).
 
 ### pose
 

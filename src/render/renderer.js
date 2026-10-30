@@ -6,8 +6,13 @@ import { VERTEX } from '../core/glsl.js';
 const JITTER = [[0, 0], [0.5, 0.25], [-0.25, 0.5], [0.25, -0.5], [-0.5, -0.25], [0.375, 0.125], [-0.125, -0.375], [0.125, 0.375]];
 
 export class Renderer {
-  constructor(canvas) {
+  /**
+   * opts.manual: no animation loop and no auto-resize; call draw() yourself
+   * (used for offscreen renders, e.g. photographing the model for face fitting).
+   */
+  constructor(canvas, options = {}) {
     this.canvas = canvas;
+    this.manual = !!options.manual;
     const opts = { antialias: false, alpha: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' };
     this.gl = canvas.getContext('webgl2', opts) || canvas.getContext('webgl', opts);
     if (!this.gl) throw new Error('WebGL is not available in this browser.');
@@ -29,7 +34,7 @@ export class Renderer {
     this.start = performance.now();
     this.onStats = null;
     this._loop = this._loop.bind(this);
-    requestAnimationFrame(this._loop);
+    if (!this.manual) requestAnimationFrame(this._loop);
   }
 
   _shader(type, src) {

@@ -24,10 +24,17 @@ export const SCHEMA = {
   face: {
     label: 'Face',
     fields: {
+      faceWidth:   { type: 'number', default: 1.0, min: 0.85, max: 1.2, step: 0.01, label: 'Face width' },
+      faceLength:  { type: 'number', default: 1.0, min: 0.85, max: 1.2, step: 0.01, label: 'Lower face length' },
+      headDepth:   { type: 'number', default: 1.0, min: 0.88, max: 1.12, step: 0.01, label: 'Head depth' },
       jaw:         { type: 'number', default: 1.0, min: 0.8, max: 1.25, step: 0.01, label: 'Jaw width' },
       cheekbones:  { type: 'number', default: 1.0, min: 0.6, max: 1.5, step: 0.01, label: 'Cheekbones' },
       noseLength:  { type: 'number', default: 1.0, min: 0.8, max: 1.25, step: 0.01, label: 'Nose length' },
       noseWidth:   { type: 'number', default: 1.0, min: 0.8, max: 1.3, step: 0.01, label: 'Nose width' },
+      noseProjection: { type: 'number', default: 1.0, min: 0.75, max: 1.35, step: 0.01, label: 'Nose projection' },
+      chinProjection: { type: 'number', default: 1.0, min: 0.7, max: 1.4, step: 0.01, label: 'Chin projection' },
+      mouthWidth:  { type: 'number', default: 1.0, min: 0.8, max: 1.25, step: 0.01, label: 'Mouth width' },
+      eyeSize:     { type: 'number', default: 1.0, min: 0.85, max: 1.2, step: 0.01, label: 'Eye size' },
       browRidge:   { type: 'number', default: 1.0, min: 0.5, max: 1.6, step: 0.01, label: 'Brow ridge' },
       lipFullness: { type: 'number', default: 1.0, min: 0.6, max: 1.5, step: 0.01, label: 'Lip fullness' },
       eyeSpacing:  { type: 'number', default: 1.0, min: 0.88, max: 1.12, step: 0.01, label: 'Eye spacing' },

@@ -5,6 +5,7 @@ import { headPoint } from './core/anatomy.js';
 import { toWorld, cross, norm, sub, dot } from './core/vec.js';
 import { Renderer } from './render/renderer.js';
 import { buildControls } from './ui/controls.js';
+import { initFacePanel } from './ui/facepanel.js';
 
 const PRESETS = [
   { id: 'performer', label: 'Mocap Performer' },
@@ -77,7 +78,7 @@ function viewPreset(name) {
   if (P) Object.assign(cam, P);
   if (name === 'face' && c) {
     const h = toWorld(c.rig.head, headPoint(c.rig, 0, 1.62, 0));
-    Object.assign(cam, { yaw: -0.35, pitch: 0.05, dist: 0.62 * s, ty: h[1] });
+    Object.assign(cam, { yaw: -0.35, pitch: 0.05, dist: 0.66 * s, ty: h[1] - 0.012 * s });
   }
   if (name === 'hands' && c) {
     const w = toWorld(c.rig.arms[1].hand, [0, 0.06 * s, 0]);
@@ -445,6 +446,13 @@ menuList.addEventListener('click', async (e) => {
   }
   if (kind === 'png' && renderer) download(`${name}.png`, await renderer.snapshot());
   closeMenu();
+});
+
+// ------------------------------------------------------------------ face from photos
+initFacePanel($('#facePanel'), {
+  getSource: () => app.source,
+  setSource: (text) => setSource(text),
+  showFace: () => setTimeout(() => viewPreset('face'), 300),
 });
 
 // ------------------------------------------------------------------ boot

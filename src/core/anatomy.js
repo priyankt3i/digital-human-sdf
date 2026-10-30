@@ -76,60 +76,71 @@ export function buildBody(h, rig, d) {
   });
 
   // ---------------- head (authored in the head frame) ----------------
+  // Reference landmarks (1.75 m figure, head-local reference space):
+  //   crown y 1.743, eye line y 1.630, nasion y 1.636, subnasale ~y 1.59,
+  //   mouth line y 1.5605, menton (chin bottom) ~y 1.505.
+  // faceWidth scales x across the face, faceLength stretches everything below
+  // the eye line, headDepth scales the cranium front-to-back.
   const H = (x, y, z) => headPoint(rig, x, y, z);
   const K = rig.headScale;
   const R = (...v) => v.map((x) => x * K);
-  const es = f.eyeSpacing;
+  const es = f.eyeSpacing, fw = f.faceWidth, fl = f.faceLength, ez = f.eyeSize;
+  const EYE_Y = 1.630;
+  const LY = (y) => (y < EYE_Y ? EYE_Y - (EYE_Y - y) * fl : y); // lower-face stretch
   h.with({ layer: 'body', region: 'head', material: 'skin', frame: 'head' }, () => {
-    h.ellipsoid(H(0, 1.645, 0.012), R(0.076, 0.098, 0.098), { name: 'cranium' });
-    h.ellipsoid(H(0, 1.585, -0.022), R(0.06 * f.jaw, 0.072, 0.072), { blend: 0.03 * K, name: 'face' });
+    const hd = f.headDepth;
+    h.ellipsoid(H(0, 1.645, 0.012 + 0.03 * (hd - 1)), R(0.076 * (0.6 + 0.4 * fw), 0.098, 0.098 * hd), { name: 'cranium' });
+    h.ellipsoid(H(0, LY(1.585), -0.022), R(0.056 * f.jaw * fw, 0.072 * fl, 0.072), { blend: 0.03 * K, name: 'face' });
+    // maxilla / philtrum: keeps the area around the mouth convex so lips don't sit on a hollow
+    h.ellipsoid(H(0, LY(1.577), -0.067), R(0.03 * fw, 0.022 * fl, 0.024), { blend: 0.02 * K, name: 'maxilla' });
     for (const side of rig.sides) {
-      h.ellipsoid(H(side * 0.045 * f.jaw, 1.555, 0.0), R(0.025, 0.03, 0.04), { blend: 0.03 * K, name: `jawAngle${sideName(side)}` });
+      h.ellipsoid(H(side * 0.037 * f.jaw * fw, LY(1.548), 0.004), R(0.02 * fw, 0.026 * fl, 0.034), { blend: 0.032 * K, name: `jawAngle${sideName(side)}` }); // gonion: go-go ~105 mm
       const cb = 0.7 + 0.3 * f.cheekbones;
-      h.ellipsoid(H(side * 0.046, 1.607, -0.058), R(0.028 * cb, 0.017 * cb, 0.024 * cb), { blend: 0.025 * K, name: `cheek${sideName(side)}` });
+      h.ellipsoid(H(side * 0.041 * fw, 1.609, -0.054), R(0.025 * cb * fw, 0.016 * cb, 0.024 * cb), { blend: 0.03 * K, name: `cheek${sideName(side)}` }); // zygion: zy-zy ~135 mm
     }
-    h.ellipsoid(H(0, 1.523, -0.058), R(0.024 * f.jaw, 0.019, 0.02).map((v) => v * m.chin), { blend: 0.022 * K, name: 'chin' });
-    h.ellipsoid(H(0, 1.654, -0.074), R(0.058, 0.012 * f.browRidge, 0.015 * f.browRidge), { blend: 0.03 * K, name: 'brow' });
+    const cp = f.chinProjection;
+    h.ellipsoid(H(0, LY(1.531), -0.067 - 0.012 * (cp - 1)), R(0.024 * f.jaw * fw, 0.02 * fl, 0.022 * cp).map((v) => v * m.chin), { blend: 0.022 * K, name: 'chin' });
+    h.ellipsoid(H(0, 1.656, -0.076), R(0.058 * fw, 0.013 * f.browRidge, 0.015 * f.browRidge), { blend: 0.028 * K, name: 'brow' });
 
-    // nose
-    const nl = f.noseLength, nw = f.noseWidth;
-    const tip = H(0, 1.636 - 0.043 * nl, -0.103 - 0.004 * nl);
-    h.limb(H(0, 1.636, -0.084), tip, 0.0062 * K * nw, 0.0088 * K * nw, { blend: 0.012 * K, name: 'noseBridge' });
+    // nose: length runs down from the nasion, projection pushes the tip forward
+    const nl = f.noseLength, nw = f.noseWidth, np = f.noseProjection;
+    const tip = H(0, LY(1.636 - 0.043 * nl), -0.103 - 0.004 * nl - 0.014 * (np - 1));
+    h.limb(H(0, 1.634, -0.0795), tip, 0.0062 * K * nw, 0.0088 * K * nw, { blend: 0.01 * K, name: 'noseBridge' });
     h.ellipsoid(tip, R(0.0115 * nw, 0.0095, 0.0105), { blend: 0.008 * K, name: 'noseTip' });
     for (const side of rig.sides) {
-      h.ellipsoid(add(tip, R(side * 0.0118 * nw, -0.0015, 0.0085)), R(0.0085, 0.0072, 0.0085), { blend: 0.008 * K, name: `ala${sideName(side)}` });
+      h.ellipsoid(add(tip, R(side * 0.0098 * nw, -0.0015, 0.0085 + 0.006 * (np - 1))), R(0.0075, 0.0068, 0.008), { blend: 0.008 * K, name: `ala${sideName(side)}` }); // al-al ~33 mm
     }
 
     // eye sockets
     for (const side of rig.sides) {
-      h.sphere(H(side * 0.032 * es, 1.630, -0.085), 0.0175 * K, { op: 'subtract', blend: 0.012 * K, name: `socket${sideName(side)}` });
+      h.sphere(H(side * 0.032 * es, EYE_Y, -0.085), 0.0175 * K * ez, { op: 'subtract', blend: 0.012 * K, name: `socket${sideName(side)}` });
     }
     // eyelids: upper lid hoods the eyeball, lower lid is a thin rim
     for (const side of rig.sides) {
       const x = side * 0.032 * es;
-      h.ellipsoid(H(x, 1.638, -0.0732), R(0.0165, 0.0066, 0.0115), { blend: 0.004 * K, name: `upperLid${sideName(side)}` });
-      h.ellipsoid(H(x, 1.6225, -0.0725), R(0.0155, 0.0042, 0.0105), { blend: 0.004 * K, name: `lowerLid${sideName(side)}` });
+      h.ellipsoid(H(x, EYE_Y + 0.0095 * ez, -0.0732), R(0.0165 * ez, 0.0058 * ez, 0.0115 * ez), { blend: 0.004 * K, name: `upperLid${sideName(side)}` });
+      h.ellipsoid(H(x, EYE_Y - 0.0088 * ez, -0.0725), R(0.0155 * ez, 0.0042 * ez, 0.0105 * ez), { blend: 0.004 * K, name: `lowerLid${sideName(side)}` });
     }
 
     // lips and mouth
-    const lf = f.lipFullness;
-    h.ellipsoid(H(0, 1.5655, -0.0855), R(0.022, 0.0052 * lf, 0.0075 * lf), { material: 'lip', blend: 0.005 * K, name: 'upperLip' });
-    h.ellipsoid(H(0, 1.5555, -0.0835), R(0.02, 0.006 * lf, 0.0078 * lf), { material: 'lip', blend: 0.005 * K, name: 'lowerLip' });
-    h.capsule(H(-0.021, 1.5605, -0.094), H(0.021, 1.5605, -0.094), 0.0014 * K, { op: 'subtract', blend: 0.002 * K, name: 'mouthLine' });
+    const lf = f.lipFullness, mw = f.mouthWidth;
+    h.ellipsoid(H(0, LY(1.5655), -0.0895), R(0.024 * mw, 0.0052 * lf, 0.0068 * lf), { material: 'lip', blend: 0.005 * K, name: 'upperLip' });
+    h.ellipsoid(H(0, LY(1.5555), -0.0875), R(0.022 * mw, 0.006 * lf, 0.007 * lf), { material: 'lip', blend: 0.005 * K, name: 'lowerLip' });
+    h.capsule(H(-0.023 * mw, LY(1.5605), -0.0975), H(0.023 * mw, LY(1.5605), -0.0975), 0.0014 * K, { op: 'subtract', blend: 0.002 * K, name: 'mouthLine' });
 
     // ears
     for (const side of rig.sides) {
       const e = f.earSize;
-      h.ellipsoid(H(side * 0.077, 1.628, 0.012), R(0.012, 0.031 * e, 0.02 * e), { blend: 0.008 * K, name: `ear${sideName(side)}` });
-      h.sphere(H(side * 0.088, 1.626, 0.008), 0.011 * K * e, { op: 'subtract', blend: 0.004 * K, name: `concha${sideName(side)}` });
+      h.ellipsoid(H(side * 0.077 * (0.6 + 0.4 * fw), 1.628, 0.012), R(0.012, 0.031 * e, 0.02 * e), { blend: 0.008 * K, name: `ear${sideName(side)}` });
+      h.sphere(H(side * (0.077 * (0.6 + 0.4 * fw) + 0.011), 1.626, 0.008), 0.011 * K * e, { op: 'subtract', blend: 0.004 * K, name: `concha${sideName(side)}` });
     }
   });
 
   // eyeballs + irises are their own layer so they never blend into skin
   h.with({ layer: 'eyes', region: 'head', frame: 'head' }, () => {
     for (const side of rig.sides) {
-      h.sphere(H(side * 0.032 * es, 1.630, -0.0705), 0.0118 * K, { material: 'eye', name: `eye${sideName(side)}` });
-      h.sphere(H(side * 0.032 * es, 1.630, -0.0778), 0.0056 * K, { material: 'iris', name: `iris${sideName(side)}` });
+      h.sphere(H(side * 0.032 * es, EYE_Y, -0.0705), 0.0118 * K * ez, { material: 'eye', name: `eye${sideName(side)}` });
+      h.sphere(H(side * 0.032 * es, EYE_Y, -0.0705 - 0.0073 * ez), 0.0056 * K * ez, { material: 'iris', name: `iris${sideName(side)}` });
     }
   });
 

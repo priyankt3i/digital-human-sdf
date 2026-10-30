@@ -37,6 +37,12 @@ export default {
   arm build and elbow angle, hand and foot size, and facial structure. A
   `softness` slider runs from lean to soft. The tests check the waist-to-hip
   ratio stays in typical adult ranges: about 0.85 male and 0.66 female.
+- **Your face from photos.** Add a front photo, left and right profiles,
+  and the back of the head. The studio measures them in your browser with
+  MediaPipe (nothing is uploaded) and fits the face controls: proportions from
+  the front, nose and chin projection and head depth from the profiles, hair
+  style and color from the back. It's a proportional likeness, not a photoreal
+  clone.
 - **A rig.** Shoulder, elbow, hip, knee and neck joints drive limbs, hands and
   head. A knee bend lowers the pelvis so the feet stay on the floor.
   `weightShift` gives a contrapposto stance: the hips tilt, the shoulders tilt
@@ -97,7 +103,8 @@ src/core/compiler.js    parts -> GLSL with bounding regions and materials
 src/core/glsl.js        primitives, lighting, camera, tonemapping
 src/core/source.js      design file evaluation and in-place literal editing
 src/render/renderer.js  WebGL, async shader compile, progressive AA
-src/ui/                 controls and styles
+src/face/                photo measurement (MediaPipe), profile tracing, face fitting
+src/ui/                 controls, face-from-photos panel, styles
 designs/                example designs
 tools/                  build CLI, dev server, screenshot script
 legacy/v0-prototype.html  the original single-file prototype
