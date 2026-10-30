@@ -40,9 +40,9 @@ export function morph(design) {
     hand: mix(1.0, 0.9, F),
     foot: mix(1.0, 0.9, F),
     belly: mix(1.0, 0.92, F) * mix(0.95, 1.08, soft),
-    jaw: mix(1.0, 0.88, F),
+    jaw: mix(1.0, 0.94, F),            // narrower but not pointed: a too-small jaw under a full cranium reads as 'alien'
     brow: mix(1.0, 0.5, F),
-    chin: mix(1.0, 0.85, F),
+    chin: mix(1.0, 0.92, F),
     nose: mix(1.0, 0.88, F),
     lips: mix(1.0, 1.15, F),
     cheek: mix(1.0, 1.1, F),

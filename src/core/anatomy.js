@@ -43,9 +43,9 @@ export function buildBody(h, rig, d) {
       if (b.bust > 0.02) {
         const k = b.bust;
         // upper slope: broad and shallow, blends smoothly into the chest
-        h.ellipsoid(C(side * 0.083 * ch, 1.272, -0.068 * ch - 0.008 * k), S(0.05 + 0.012 * k, 0.048 + 0.01 * k, 0.03 + 0.016 * k), { blend: 0.04 * s, name: `bustUpper${n}` });
+        h.ellipsoid(C(side * 0.083 * ch, 1.272, -0.068 * ch - 0.008 * k), S(0.05 + 0.012 * k, 0.048 + 0.01 * k, 0.03 + 0.016 * k), { blend: 0.06 * s, name: `bustUpper${n}` });
         // lower pole: fuller and rounder, small blend keeps the inframammary fold defined
-        h.ellipsoid(C(side * 0.088 * ch, 1.246 - 0.012 * k, -0.068 * ch - 0.012 * k), S(0.048 + 0.018 * k, 0.04 + 0.015 * k, 0.03 + 0.016 * k), { blend: 0.024 * s, name: `bustLower${n}` });
+        h.ellipsoid(C(side * 0.088 * ch, 1.246 - 0.012 * k, -0.068 * ch - 0.012 * k), S(0.048 + 0.018 * k, 0.04 + 0.015 * k, 0.03 + 0.016 * k), { blend: 0.04 * s, name: `bustLower${n}` });
       }
     }
   });
@@ -56,10 +56,10 @@ export function buildBody(h, rig, d) {
     h.ellipsoid(Pv(0, 1.0, -0.018), S(0.118 * hp, 0.07, 0.082 * m.belly), { blend: 0.05 * s, name: 'lowerAbdomen' });
     for (const side of rig.sides) {
       const n = sideName(side);
-      h.ellipsoid(Pv(side * 0.07 * hp, 0.885, 0.052 * b.hips + m.pelvicTilt), S(0.08 * b.hips * m.glute, 0.085 * m.glute, 0.07 * b.hips * m.glute), { blend: 0.04 * s, name: `glute${n}` });
+      h.ellipsoid(Pv(side * 0.07 * hp, 0.885, 0.052 * b.hips + m.pelvicTilt), S(0.08 * b.hips * m.glute, 0.085 * m.glute, 0.07 * b.hips * m.glute), { blend: 0.065 * s, name: `glute${n}` });
       if (m.hipPad > 0.02) {
         const k = 0.5 + 0.5 * Math.min(1.2, m.hipPad);
-        h.ellipsoid(Pv(side * 0.132 * hp, 0.858, 0.012), S(0.056 * k, 0.095, 0.072 * k), { blend: 0.06 * s, name: `hipCurve${n}` });
+        h.ellipsoid(Pv(side * 0.132 * hp, 0.858, 0.012), S(0.05 * k, 0.12, 0.068 * k), { blend: 0.1 * s, name: `hipCurve${n}` });
       }
     }
   });
@@ -86,15 +86,15 @@ export function buildBody(h, rig, d) {
     for (const side of rig.sides) {
       h.ellipsoid(H(side * 0.045 * f.jaw, 1.555, 0.0), R(0.025, 0.03, 0.04), { blend: 0.03 * K, name: `jawAngle${sideName(side)}` });
       const cb = 0.7 + 0.3 * f.cheekbones;
-      h.ellipsoid(H(side * 0.046, 1.618, -0.058), R(0.028 * cb, 0.017 * cb, 0.024 * cb), { blend: 0.025 * K, name: `cheek${sideName(side)}` });
+      h.ellipsoid(H(side * 0.046, 1.607, -0.058), R(0.028 * cb, 0.017 * cb, 0.024 * cb), { blend: 0.025 * K, name: `cheek${sideName(side)}` });
     }
     h.ellipsoid(H(0, 1.523, -0.058), R(0.024 * f.jaw, 0.019, 0.02).map((v) => v * m.chin), { blend: 0.022 * K, name: 'chin' });
-    h.ellipsoid(H(0, 1.666, -0.074), R(0.058, 0.012 * f.browRidge, 0.015 * f.browRidge), { blend: 0.03 * K, name: 'brow' });
+    h.ellipsoid(H(0, 1.654, -0.074), R(0.058, 0.012 * f.browRidge, 0.015 * f.browRidge), { blend: 0.03 * K, name: 'brow' });
 
     // nose
     const nl = f.noseLength, nw = f.noseWidth;
-    const tip = H(0, 1.648 - 0.043 * nl, -0.103 - 0.004 * nl);
-    h.limb(H(0, 1.648, -0.084), tip, 0.0062 * K * nw, 0.0088 * K * nw, { blend: 0.012 * K, name: 'noseBridge' });
+    const tip = H(0, 1.636 - 0.043 * nl, -0.103 - 0.004 * nl);
+    h.limb(H(0, 1.636, -0.084), tip, 0.0062 * K * nw, 0.0088 * K * nw, { blend: 0.012 * K, name: 'noseBridge' });
     h.ellipsoid(tip, R(0.0115 * nw, 0.0095, 0.0105), { blend: 0.008 * K, name: 'noseTip' });
     for (const side of rig.sides) {
       h.ellipsoid(add(tip, R(side * 0.0118 * nw, -0.0015, 0.0085)), R(0.0085, 0.0072, 0.0085), { blend: 0.008 * K, name: `ala${sideName(side)}` });
@@ -102,13 +102,13 @@ export function buildBody(h, rig, d) {
 
     // eye sockets
     for (const side of rig.sides) {
-      h.sphere(H(side * 0.032 * es, 1.643, -0.085), 0.0175 * K, { op: 'subtract', blend: 0.012 * K, name: `socket${sideName(side)}` });
+      h.sphere(H(side * 0.032 * es, 1.630, -0.085), 0.0175 * K, { op: 'subtract', blend: 0.012 * K, name: `socket${sideName(side)}` });
     }
     // eyelids: upper lid hoods the eyeball, lower lid is a thin rim
     for (const side of rig.sides) {
       const x = side * 0.032 * es;
-      h.ellipsoid(H(x, 1.651, -0.0732), R(0.0165, 0.0066, 0.0115), { blend: 0.004 * K, name: `upperLid${sideName(side)}` });
-      h.ellipsoid(H(x, 1.6355, -0.0725), R(0.0155, 0.0042, 0.0105), { blend: 0.004 * K, name: `lowerLid${sideName(side)}` });
+      h.ellipsoid(H(x, 1.638, -0.0732), R(0.0165, 0.0066, 0.0115), { blend: 0.004 * K, name: `upperLid${sideName(side)}` });
+      h.ellipsoid(H(x, 1.6225, -0.0725), R(0.0155, 0.0042, 0.0105), { blend: 0.004 * K, name: `lowerLid${sideName(side)}` });
     }
 
     // lips and mouth
@@ -128,8 +128,8 @@ export function buildBody(h, rig, d) {
   // eyeballs + irises are their own layer so they never blend into skin
   h.with({ layer: 'eyes', region: 'head', frame: 'head' }, () => {
     for (const side of rig.sides) {
-      h.sphere(H(side * 0.032 * es, 1.643, -0.0705), 0.0118 * K, { material: 'eye', name: `eye${sideName(side)}` });
-      h.sphere(H(side * 0.032 * es, 1.643, -0.0778), 0.0056 * K, { material: 'iris', name: `iris${sideName(side)}` });
+      h.sphere(H(side * 0.032 * es, 1.630, -0.0705), 0.0118 * K, { material: 'eye', name: `eye${sideName(side)}` });
+      h.sphere(H(side * 0.032 * es, 1.630, -0.0778), 0.0056 * K, { material: 'iris', name: `iris${sideName(side)}` });
     }
   });
 
@@ -139,11 +139,11 @@ export function buildBody(h, rig, d) {
     h.with({ layer: 'body', region: `arm${n}`, material: cover }, () => {
       const sh = A.shoulder, el = A.elbow, wr = A.wrist;
       const am = mu * m.arm;
-      h.ellipsoid(add(sh, S(side * 0.008, -0.012, 0)), S(0.047 * mu * m.deltoid, 0.058 * m.deltoid, 0.052 * mu * m.deltoid), { blend: 0.04 * s, name: `deltoid${n}` });
+      h.ellipsoid(add(sh, S(side * 0.008, -0.012, 0)), S(0.047 * mu * m.deltoid, 0.058 * m.deltoid, 0.052 * mu * m.deltoid), { blend: 0.055 * s, name: `deltoid${n}` });
       const mid = lerp(sh, el, 0.45);
-      h.limb(sh, mid, 0.046 * am * s, 0.044 * am * s, { blend: 0.03 * s, name: `upperArm${n}` });
-      h.limb(mid, el, 0.044 * am * s, 0.035 * am * s, { blend: 0.03 * s, name: `upperArmLow${n}` });
-      h.sphere(el, 0.035 * am * s, { blend: 0.02 * s, name: `elbow${n}` });
+      h.limb(sh, mid, 0.046 * am * s, 0.043 * am * s, { blend: 0.045 * s, name: `upperArm${n}` });
+      h.limb(mid, el, 0.043 * am * s, 0.034 * am * s, { blend: 0.045 * s, name: `upperArmLow${n}` });
+      h.sphere(el, 0.032 * am * s, { blend: 0.035 * s, name: `elbow${n}` });
       const fm = lerp(el, wr, 0.3);
       h.limb(el, fm, 0.038 * am * s, 0.039 * am * s, { blend: 0.025 * s, name: `forearm${n}` });
       h.limb(fm, wr, 0.039 * am * s, 0.025 * s * m.hand, { blend: 0.025 * s, name: `forearmLow${n}` });
@@ -158,17 +158,17 @@ export function buildBody(h, rig, d) {
     h.with({ layer: 'body', region: `leg${n}`, material: cover }, () => {
       const mid = lerp(L.hip, L.knee, 0.5);
       const kneeR = 0.05 * mu * m.knee * s;
-      h.limb(hipTop, mid, 0.088 * mu * Math.pow(b.hips, 0.4) * m.thighUpper * s, 0.068 * mu * s * (0.97 + 0.03 * m.thighUpper), { blend: 0.05 * s, name: `thigh${n}` });
-      h.limb(mid, L.knee, 0.068 * mu * s * (0.97 + 0.03 * m.thighUpper), kneeR, { blend: 0.03 * s, name: `thighLow${n}` });
+      h.limb(hipTop, mid, 0.088 * mu * Math.pow(b.hips, 0.4) * m.thighUpper * s, 0.068 * mu * s * (0.97 + 0.03 * m.thighUpper), { blend: 0.065 * s, name: `thigh${n}` });
+      h.limb(mid, L.knee, 0.068 * mu * s * (0.97 + 0.03 * m.thighUpper), kneeR, { blend: 0.045 * s, name: `thighLow${n}` });
       if (m.thighInner > 0.25) {
         // adductor / inner-thigh mass: fills the gap under the pelvis
         const inner = add(lerp(L.hip, L.knee, 0.26), mul(rig.pelvis.X, -side * 0.028 * s));
         h.ellipsoid(inner, S(0.05, 0.11, 0.06).map((v) => v * (0.6 + 0.4 * m.thighInner)), { blend: 0.045 * s, name: `innerThigh${n}` });
       }
-      h.ellipsoid(add(L.knee, S(0, 0, -0.008)), S(0.05 * mu * m.knee, 0.055 * m.knee, 0.052 * mu * m.knee), { blend: 0.025 * s, name: `knee${n}` });
-      h.limb(L.knee, L.ankle, 0.048 * mu * m.knee * s, 0.03 * s * m.foot, { blend: 0.03 * s, name: `shin${n}` });
+      h.ellipsoid(add(L.knee, S(0, 0, -0.01)), S(0.044 * mu * m.knee, 0.05 * m.knee, 0.046 * mu * m.knee), { blend: 0.04 * s, name: `knee${n}` });
+      h.limb(L.knee, L.ankle, 0.045 * mu * m.knee * s, 0.029 * s * m.foot, { blend: 0.045 * s, name: `shin${n}` });
       const calf = add(lerp(L.knee, L.ankle, 0.3), S(0, 0, 0.018));
-      h.ellipsoid(calf, S(0.042 * mu * m.calf, 0.085, 0.042 * mu * m.calf), { blend: 0.035 * s, name: `calf${n}` });
+      h.ellipsoid(calf, S(0.04 * mu * m.calf, 0.1, 0.04 * mu * m.calf), { blend: 0.05 * s, name: `calf${n}` });
       h.sphere(L.ankle, 0.032 * s * m.foot, { blend: 0.02 * s, name: `ankle${n}` });
     });
     const a = L.ankle;
