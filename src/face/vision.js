@@ -68,16 +68,9 @@ export function segment(vision, image) {
 
 /** Load a File/Blob/URL into a canvas, downscaled so the long side is <= maxSide. */
 export async function toCanvas(src, maxSide = 1024) {
-  let bitmap;
-  if (typeof src === 'string') {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = src;
-    await img.decode();
-    bitmap = img;
-  } else {
-    bitmap = await createImageBitmap(src, { imageOrientation: 'from-image' });
-  }
+  // createImageBitmap decodes off the render loop, so it also works in background tabs
+  const blob = typeof src === 'string' ? await (await fetch(src)).blob() : src;
+  const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
   const w0 = bitmap.width, h0 = bitmap.height;
   const k = Math.min(1, maxSide / Math.max(w0, h0));
   const c = document.createElement('canvas');
